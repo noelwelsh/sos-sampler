@@ -14,13 +14,14 @@ object GlobalStyles extends StyleSheet.Inline {
   implicit def applyStyle(styleA: StyleA): Mod[HtmlElement] =
     cls(styleA.className.value)
 
-  val bodyStyle = style(
+  val bodyStyle: StyleA = style(
     unsafeRoot("body")(
       backgroundImage := "radial-gradient(circle at top left, #505050, #404040, #303030, #000000)",
       margin.`0`,
       padding.`0`,
       height(100.vh),
-      width(100.vw)
+      width(100.vw),
+
     )
   )
 
@@ -29,7 +30,6 @@ object GlobalStyles extends StyleSheet.Inline {
     fontFamily.attr := "fantasy",
     margin.auto,
     fontSize(62 px),
-    //backgroundImage := "radial-gradient(at left bottom, #919191, #010101)"
   )
 
   val canvas: StyleA = style("canvas")(
@@ -113,29 +113,22 @@ object GlobalStyles extends StyleSheet.Inline {
 
   val controls: StyleA = style("controls")(
     display.flex,
-    flexDirection.column,
     justifyContent.center,
-    alignItems.center,
-    margin(20 px),
   )
 
   val slider: StyleA = style("slider")(
     all.unset,
-    margin(10.px),
-    width(100.px),
-    height(5.px),
-    backgroundColor.darkred,
-    border(1px, solid, c"#ccc"),
-    borderRadius(5.px),
+    width(50.px),
+    height(10.px),
+    backgroundColor(c"#d3d3d3"),
     outline.none,
-    padding(5.px),
-    &.focus(
-      borderColor(c"#007bff")
-    ),
+    opacity(0.7),
+    transition := "opacity .2s",
     &.hover(
-      borderColor(c"#0056b3")
+      opacity(1)
+    )
   )
-  )
+
 
   val checkbox: StyleA = style("checkbox")(
     all.unset,
@@ -150,5 +143,17 @@ object GlobalStyles extends StyleSheet.Inline {
     cursor.pointer,
     transition := "background-color 0.3s ease, color 0.3s ease, transform 0.2s ease",
     boxShadow := "0 4px 6px rgba(0, 0, 0, 0.1)",
+    &.checked(
+      backgroundColor.darkblue,
+      borderColor.darkred,
+      color.white,
+      transform := "translateY(-2px)"
+    ),
+  )
+
+  val labels: StyleA = style("labels")(
+    color.white,
+    fontSize(10 px),
+    margin(2 px),
   )
 }
