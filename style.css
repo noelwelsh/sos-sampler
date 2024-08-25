@@ -1,15 +1,329 @@
 
+html {
+    background: transparent linear-gradient(180deg, #B1B1B1 0%, #434343 100%) 0% 0% no-repeat padding-box;
+    width: 100vw;
+    height: 100vh;
+    }
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    }
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    }
+
+.sampler-container {
+    width: 97%;
+    height: 95%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: column;
+    background: transparent linear-gradient(180deg, #C7C7C7 0%, #646464 100%) 0% 0% no-repeat padding-box;
+    border-radius: 30px;
+    }
+
+.sampler-section {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    width: 97%;
+    height: 25%;
+    box-sizing: border-box;
+    background: transparent linear-gradient(180deg, #B1AFAF 0%, #ACACAC 36%, #7E7E7E 100%) 0% 0% no-repeat padding-box;
+    box-shadow: inset 0px 3px 6px #00000029;
+    opacity: 1;
+    border-radius: 20px;
+    }
+
+.waveform-loader {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    width: 75%;
+    height: 85%;
+    background: transparent linear-gradient(180deg, #C1C0C0 0%, #818181 77%, #747474 100%) 0% 0% no-repeat padding-box;
+    box-shadow: inset 0px 3px 6px #00000029, 0px 3px 20px #00000029;
+    border-radius: 20px;
+    }
+
+.text-container {
+    width:55%;
+    height: 80%;
+    margin-left: 1%;
+    background: transparent linear-gradient(180deg, #586E20 0%, #213E26 100%, #021207 100%) 0% 0% no-repeat padding-box;
+    border-radius: 10px 0px 0px 10px;
+    box-shadow: 0px 3px 6px #00000029, 0px 3px 6px #00000029;
+    text-align: left;
+    font: normal normal normal 12px/15px Krungthep;
+    letter-spacing: 1.2px;
+    color: #E2FF00;
+    text-shadow: inset 0px 3px 6px #00000029, 0px 3px 4px #00000029;
+    text-transform: uppercase;
+    }
+
+p {
+    padding-left: 10px;
+    }
+
+#canvas {
+    height: 80%;
+    width: 40%;
+    background: transparent linear-gradient(180deg, #586E20 0%, #213E26 100%, #021207 100%) 0% 0% no-repeat padding-box;
+    margin-right: 1%;
+    border-radius:  0px 10px 10px 0px;
+    box-shadow: inset 0px 3px 6px #00000029, 0px 3px 6px #00000029;
+   }
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    }
+
+.sliders {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: row;
+    width: 45%;
+    height: 100%;
+    }
+
+.slider-container {
+    position: relative;
+    display: flex;
+    align-content: center;
+    justify-content: space-around;
+    alight-items: center;
+    flex-direction: column;
+    border-radius: 15px;
+    text-align: center;
+    width: 3%;
+    height: 82%;
+    background: transparent linear-gradient(180deg, #D0D0D0 0%, #C3BFBF 53%, #5C5C5C 100%) 0% 0% no-repeat padding-box;
+    box-shadow: inset 0px 3px 6px #00000029, 0px 3px 6px #00000029;
 }
 
-#facade {
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.slider-label {
+    width: adjust;
+    display: none;
+    position: absolute;
+    top: -15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2E2E2E;
+    font: normal normal normal 12px/15px Krungthep;
+    letter-spacing: 1.2px;
+    color: #E2FF00;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+
+.slider-container:hover .slider-label {
+    display: block;
+}
+
+.slider-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    background-image: url('/resources/images/knobGold.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    border: none;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.slider-track {
+    width: 20%;
+    -webkit-appearance: none;
+    height: 80%;
+    background: #8B0000;
+    outline: none;
+    border-radius: 5px;
+    background: transparent linear-gradient(180deg, #B7B7B7 0%, #000000 100%) 0% 0% no-repeat padding-box;
+    writing-mode: bt-lr; /* Vertical, bottom to top */
+    -webkit-writing-mode: vertical-rl;
+    direction: rtl;
+}
+
+.playback-controls {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: row;
+    width: 20%;
+    height: 82%;
+    background: transparent linear-gradient(180deg, #C1C0C0 0%, #818181 77%, #747474 100%) 0% 0% no-repeat padding-box;
+    box-shadow: inset 0px 3px 6px #00000029, 0px 3px 20px #00000029;
+    border-radius: 15px;
+    }
+
+.checkbox-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 10vh;
+    height: 10vh;
+    background: transparent linear-gradient(180deg, #908E8E 0%, #938E8E 62%, #535353 100%) 0% 0% no-repeat padding-box;
+    box-shadow: inset 0px 3px 6px #00000029;
+    border-radius: 15px;
+}
+
+.custom-checkbox {
+    appearance: none;
+    width: 40%;
+    height: 40%;
+    border-radius: 5px;
+    background: transparent linear-gradient(180deg, #A5A5A5 0%, #7C7B7B 50%, #535353 100%) 0% 0% no-repeat padding-box;
+    box-shadow:  0px 3px 6px #00000029, 0px 3px 6px #00000029;
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.custom-checkbox:checked {
+    box-shadow: 0px 0px 10px 1px #E2FF00
+
+}
+
+.checkbox-label {
+    position: absolute;
+    top: 49%;
+    font-size: 14px;
+    user-select: none;
+    text-align: center;
+    font: normal normal normal 20px/30px Krungthep;
+    letter-spacing: 0.1px;
+    color: #8B8B8B;
+    text-shadow: inset 0px 3px 6px #00000029, 0px 3px 4px #00000029;
+    text-transform: uppercase;
+    opacity: 1;
+}
+
+.keyboard-container {
+    width: 97%;
+    height: 39%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+    background: transparent linear-gradient(180deg, #908E8E 0%, #938E8E 62%, #535353 100%) 0% 0% no-repeat padding-box;
+    box-shadow: inset 0px 3px 6px #00000029;
+}
+
+.keyboard {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: #E2FF00;
+    border-radius: 5px;
+    box-shadow: 0px 10px 15px -10px #E2FF00;
+}
+
+.octave {
+    display: flex;
+    position: relative;
+}
+
+.white-key {
+    width: 40px;
+    height: 31vh;
+    background-color: white;
+    border: 1px solid black;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 200px;
+    cursor: pointer;
+    border-radius: 0px 0px 5px 5px;
+    box-shadow: 0px 0px 0px 62px rgba(0, 0, 0, 0.65) inset,
+    -11px 4px 10px 0px rgba(0, 0, 0, 0.55) inset,
+    12px -19px 10px 0px rgba(0, 0, 0, 0.55) inset;
+}
+
+.white-key:active {
+    transition: transform 0.2s;
+    transform: perspective(330px) rotateX(-2deg);
+    transform-origin: top;
+}
+
+.black-key {
+  width: 30px;
+  height: 170px;
+  background-color: white;
+  border: 1px solid black;
+  box-sizing: border-box;
+  margin-right: 10px;
   text-align: center;
+  line-height: 120px;
+  cursor: pointer;
+  border-radius: 0px 0px 5px 5px;
+  box-shadow: 0px 0px 0px 62px rgba(0, 0, 0, 0.65) inset,
+  -11px 4px 10px 0px rgba(0, 0, 0, 0.55) inset,
+  12px -19px 10px 0px rgba(0, 0, 0, 0.55) inset;
+}
+
+.black-key:active {
+    transition: transform 0.2s;
+    transform: perspective(1500px) rotateX(-6deg);
+    transform-origin: top;
+    }
+
+.spacer {
+    width: 40px;
+    }
+
+.black-keys {
+    display: flex;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+    margin-left: 25px;
+}
+
+.select-text {
+ font: normal normal normal 12px/15px Krungthep;
+    letter-spacing: 0.1px;
+    color: #E2FF00;
+    text-transform: uppercase;
 }
 
 

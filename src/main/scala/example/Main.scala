@@ -2,46 +2,31 @@ package example
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import com.raquo.laminar.api.L.{*, given}
+
+import com.raquo.laminar.api.L.*
 import com.raquo.laminar.api.features.unitArrows
-import com.raquo.laminar.receivers.ChildReceiver.text
-import example.styles.GlobalStyles
-import example.styles.GlobalStyles.applyStyle
+
 import org.scalajs.dom
 import org.scalajs.dom.*
+import scala.scalajs.js.typedarray.{ArrayBuffer, Float32Array}
+
 import org.soundsofscala.instrument.{SamplePlayer, Sampler, Synth}
 import org.soundsofscala.models.*
 import org.soundsofscala.playback.*
-import org.soundsofscala.songexamples.ExampleSong2
-import org.soundsofscala.songexamples.ExampleSong2.musicalEvent
 import org.soundsofscala.syntax.all.*
-import org.soundsofscala.synthesis.Oscillator.SineOscillator
-import scalacss.ProdDefaults.*
-import scalacss.StyleA
-import scalacss.internal.CanIUse.canvas
-import scalacss.internal.mutable.GlobalRegistry
-
-import scala.scalajs.js.typedarray.{ArrayBuffer, Float32Array}
-
-
-
 
 @main
-def helloWorld(): Unit =
-  GlobalRegistry.addToDocumentOnRegistration()
-  GlobalRegistry.register(GlobalStyles)
+def SosSampler(): Unit =
   renderOnDomContentLoaded(dom.document.querySelector("#app"), appElement())
 
-
-
-def attemptWaveView(): Unit =
+def loadSampleView(samplePath: String): Unit =
   val audioCtx = new AudioContext()
   val request = new dom.XMLHttpRequest()
-  request.open("GET", "resources/audio/misc/rhubarbSample.wav", true)
+  request.open("GET", samplePath, true)
   request.responseType = "arraybuffer"
-  request.onload =  (e:Event) =>
+  request.onload = (e: Event) =>
     val audioData = request.response.asInstanceOf[ArrayBuffer]
-    audioCtx.decodeAudioData(audioData,  (buffer: AudioBuffer) =>
+    audioCtx.decodeAudioData(audioData, (buffer: AudioBuffer) =>
       val canvas = dom.document.getElementById("canvas").asInstanceOf[dom.html.Canvas]
       val ctx = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
       val data = buffer.getChannelData(0)
@@ -51,7 +36,7 @@ def attemptWaveView(): Unit =
 
   def drawWaveform(ctx: CanvasRenderingContext2D, data: Float32Array): Unit =
     val canvas = ctx.canvas
-    ctx.fillStyle = "rgb(200, 200, 200)"
+    ctx.fillStyle = "#E2FF00"
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     val step = Math.ceil(data.length.toDouble / canvas.width).toInt
     val amp = canvas.height / 2
@@ -59,105 +44,95 @@ def attemptWaveView(): Unit =
       val min = data.slice(i * step.toInt, i * step.toInt + step.toInt).min
       val max = data.slice(i * step.toInt, i * step.toInt + step.toInt).max
       ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp))
+end loadSampleView
 
-
-def createKeyboard(settings: Option[SamplePlayer.Settings]) =
+def createKeyboard(sampler: Sampler, settings: Option[SamplePlayer.Settings], octaves: List[Octave]) =
   given AudioContext = new AudioContext()
-
-  val minOctave = -2
-  val maxOctave = 10
 
   def whiteKeys(octave: Octave) = Seq(
     C(octave), D(octave), E(octave), F(octave), G(octave), A(octave), B(octave)
   )
+
   def blackKeys(octave: Octave) = Seq(
     C(octave).sharp, D(octave).sharp, F(octave).sharp, G(octave).sharp, A(octave).sharp
   )
 
   def createKey(key: MusicalEvent, isBlack: Boolean, id: String) =
     val keyClass = if (isBlack) "black-key" else "white-key"
-    val keyStyle = if (isBlack) GlobalStyles.black else GlobalStyles.white
-    div(cls := keyClass, keyStyle, idAttr := id, onClick --> playSingleSampleNote(key, settings).unsafeRunAndForget())
+    div(cls := keyClass, idAttr := id, onClick --> playSingleSampleNote(sampler, key, settings).unsafeRunAndForget())
 
   def createOctave(octave: Octave) =
-    val whiteKeysForOctave = whiteKeys(octave)
-    val blackKeysForOctave = blackKeys(octave)
+    val whiteKeyElements = whiteKeys(octave).zipWithIndex.map:
+      case (key, index) =>
+        createKey(key, isBlack = false, id = s"white-key-${octave.value}-$index")
+
+    val blackKeyElements = blackKeys(octave).zipWithIndex.flatMap:
+      case (key, 2) =>
+        Seq(div(cls := "spacer"), createKey(key, isBlack = true, id = s"black-key-${octave.value}-2"))
+      case (key, index) =>
+        Seq(createKey(key, isBlack = true, id = s"black-key-${octave.value}-$index"))
+
     div(cls := "octave",
-      GlobalStyles.octave,
-      //whiteKeysForOctave.map(key => createKey(key, isBlack = false)),
-      whiteKeysForOctave.zipWithIndex.map { case (key, index) => createKey(key, isBlack = false, id = s"white-key-${octave.value}-$index") },
-      div(cls := "black-keys",
-        GlobalStyles.blackKeys,
-        createKey(blackKeysForOctave.head, isBlack = true, id = s"black-key-${octave.value}-0"),
-        createKey(blackKeysForOctave(1), isBlack = true, id = s"black-key-${octave.value}-1"),
-        div(cls := "spacer", GlobalStyles.spacer),
-        createKey(blackKeysForOctave(2), isBlack = true, id = s"black-key-${octave.value}-2"),
-        createKey(blackKeysForOctave(3), isBlack = true, id = s"black-key-${octave.value}-3"),
-        createKey(blackKeysForOctave(4), isBlack = true, id = s"black-key-${octave.value}-4")
-      )
+      whiteKeyElements,
+      div(cls := "black-keys", blackKeyElements)
     )
+  end createOctave
 
   val keyboard = div(cls := "keyboard",
-    GlobalStyles.keyboard,
-    createOctave(Octave(1)),
-    createOctave(Octave(2)),
-    createOctave(Octave(3)),
-    createOctave(Octave(4)),
+    octaves.map(createOctave),
+    createKey(C(Octave(5)), isBlack = false, id = "white-key-5-0"),
   )
   keyboard
+end createKeyboard
 
-
-def firstMusicProgram(): AudioContext ?=> IO[Unit] = ExampleSong2.play()
-
-def continuousPlayback(settings: Option[SamplePlayer.Settings]): AudioContext ?=> IO[Unit] =
-  println("Playing continuous notes")
-  for {
-    piano <- Sampler.rhubarb
-    song = Song(
-      title = Title("Rhubarb Loop"),
-      tempo = Tempo(110),
-      swing = Swing(0),
-      mixer = Mixer(
-        Track(
-          Title("rhubarb D3"),
-          D(Octave(3)).loop,
-          piano,
-          settings
-         )
+def playSingleSampleNote(sampler: Sampler, key: MusicalEvent, settings: Option[SamplePlayer.Settings]): AudioContext ?=> IO[Unit] =
+  val song = Song(
+    title = Title("Single Note"),
+    tempo = Tempo(110),
+    swing = Swing(0),
+    mixer = Mixer(
+      Track(
+        Title(s"${sampler} Note"),
+        key,
+        sampler,
+        settings
       )
     )
-    _ <- song.play()
-  } yield ()
-
-
-def playSingleSampleNote(key: MusicalEvent, settings: Option[SamplePlayer.Settings]): AudioContext ?=> IO[Unit] =
-
-  for {
-    piano <- Sampler.piano
-    song = Song(
-      title = Title("Rhubarb Loop"),
-      tempo = Tempo(110),
-      swing = Swing(0),
-      mixer = Mixer(
-        Track(
-          Title("rhubarb D3"),
-          key,
-          piano,
-          settings
-
-         )
-      )
-    )
-    _ <- song.play()
-  } yield ()
-
+  )
+  song.play()
 
 
 def appElement(): HtmlElement =
   given AudioContext = new AudioContext()
 
-  val loopCheckbox = Var(false)
-  val reverseCheckbox = Var(false)
+  val selectedSampler = Var[Option[Sampler]](None)
+
+
+  def loadSampler(instrument: String): IO[Sampler] =
+    instrument.toLowerCase match
+      case "piano" => Sampler.piano
+      case "guitar" => Sampler.guitar
+      case "rhubarb" => Sampler.rhubarb
+      case _ => IO.raiseError(new IllegalArgumentException(s"Unknown instrument: $instrument"))
+
+
+  val instruments = List("Piano", "Guitar", "Rhubarb")
+
+  def instrumentClickHandler(instrument: String): Unit =
+    loadSampler(instrument).map:
+      sampler =>
+        selectedSampler.set(Some(sampler))
+        instrument.toLowerCase match
+          case "piano" => loadSampleView("resources/audio/piano/C3.wav")
+          case "guitar" => loadSampleView("resources/audio/guitar/C3.wav")
+          case "rhubarb" => loadSampleView("resources/audio/misc/rhubarbSample.wav")
+          case _ => println("Unknown instrument selected")
+    .unsafeRunAndForget()
+
+  val instrumentElements = instruments.map:
+    instrument =>
+      p(s" - $instrument", onClick --> (_ => instrumentClickHandler(instrument)))
+
 
   val volumeSlider = Var(0.5)
   val fadeInSlider = Var(0.0)
@@ -165,8 +140,71 @@ def appElement(): HtmlElement =
   val playbackRateSlider = Var(1.0)
   val startTimeSlider = Var(0.0)
   val offsetSlider = Var(0.0)
-  val durationSlider = Var(0.0)
+  val lengthSlider = Var(5.0)
+  val loopCheckbox = Var(false)
+  val reverseCheckbox = Var(false)
 
+  def createSliderElement(name: String, slider: Var[Double], min: Double, max: Double, default: Double, step: Double) =
+    val sliderBackgroundSignal = slider.signal.map:
+      value =>
+        val percentage = ((value - min) / (max - min)) * 100
+        s"linear-gradient(to top, #E2FF00 0%, #E2FF00 $percentage%, #2E2E2E $percentage%)"
+
+    val sliderBoxShadowSignal = slider.signal.map:
+      value =>
+        val spread = ((value - min) / (max - min)) * 1.5
+        val blur = ((value - min) / (max - min)) * 10
+        s"0px 0px ${blur}px ${spread}px #E2FF00"
+
+    val sliderElement = div(cls := "slider-container",
+      div(cls := "slider",
+        input(
+          cls := "slider-track slider-thumb",
+          defaultValue := default.toString,
+          minAttr := min.toString,
+          maxAttr := max.toString,
+          stepAttr := step.toString,
+          typ := "range",
+          value <-- slider.signal.map(_.toString),
+          background <-- sliderBackgroundSignal,
+          boxShadow <-- sliderBoxShadowSignal,
+          inContext: thisNode =>
+            onInput.mapTo(thisNode.ref.valueAsNumber) --> slider
+        )
+      ),
+      label(name, cls := "slider-label")
+    )
+    sliderElement
+  end createSliderElement
+
+  def createCheckboxElement(name: String, checkbox: Var[Boolean]) =
+    div(cls := "checkbox-container",
+      input(typ := "checkbox", cls := "custom-checkbox", checked <-- checkbox.signal, onInput.mapToChecked --> checkbox),
+      label(name, cls := "checkbox-label")
+    )
+
+  val customSettings: Signal[SamplePlayer.Settings] =
+    for
+      loop <- loopCheckbox.signal
+      reverse <- reverseCheckbox.signal
+      volume <- volumeSlider.signal
+      fadeIn <- fadeInSlider.signal
+      fadeOut <- fadeOutSlider.signal
+      playbackRate <- playbackRateSlider.signal
+      startTime <- startTimeSlider.signal
+      offset <- offsetSlider.signal
+      duration <- lengthSlider.signal
+    yield SamplePlayer.Settings(
+      volume = volume,
+      fadeIn = fadeIn,
+      fadeOut = fadeOut,
+      playbackRate = playbackRate,
+      reversed = reverse,
+      loop = if (loop) Some(Loop(start = 1, end = 2)) else None,
+      startTime = startTime, offset = offset, duration = Some(duration)
+    )
+
+  val octaves = List(Octave(1), Octave(2), Octave(3), Octave(4))
 
   val keyToNote = Map(
     "a" -> "white-key-2-0",
@@ -181,89 +219,66 @@ def appElement(): HtmlElement =
     "h" -> "white-key-2-5",
     "u" -> "black-key-2-4",
     "j" -> "white-key-2-6",
+    "k" -> "white-key-3-0",
+    "o" -> "black-key-3-0",
+    "l" -> "white-key-3-1",
+    "p" -> "black-key-3-1",
+    "ö" -> "white-key-3-2",
+    "ä" -> "white-key-3-3",
   )
 
-  dom.document.addEventListener("keydown", (e: KeyboardEvent) => {
-
+  dom.document.addEventListener("keydown", (e: KeyboardEvent) =>
     val key = e.key
-    keyToNote.get(key).foreach { keyId =>
-      val keyElement = dom.document.getElementById(keyId)
-      if (keyElement != null) {
-        keyElement.asInstanceOf[dom.html.Element].click()
-        keyElement.asInstanceOf[dom.html.Element].style.transition = "transform 0.2s"
-        keyElement.asInstanceOf[dom.html.Element].style.transform = "perspective(330px) rotateX(-2deg)"
-        keyElement.asInstanceOf[dom.html.Element].style.transformOrigin = "top"
-
-      }
-    }
-  })
-
-  dom.document.addEventListener("keyup", (e: KeyboardEvent) => {
-    val key = e.key
-    keyToNote.get(key).foreach { keyId =>
-      val keyElement = dom.document.getElementById(keyId)
-      if (keyElement != null) {
-        keyElement.asInstanceOf[dom.html.Element].style.transform = ""
-      }
-    }
-  })
-
-  val customSettings: Signal[SamplePlayer.Settings] =
-    for {
-      loop <- loopCheckbox.signal
-      reverse <- reverseCheckbox.signal
-      volume <- volumeSlider.signal
-      fadeIn <- fadeInSlider.signal
-      fadeOut <- fadeOutSlider.signal
-      playbackRate <- playbackRateSlider.signal
-      startTime <- startTimeSlider.signal
-      offset <- offsetSlider.signal
-      duration <- durationSlider.signal
-
-    } yield SamplePlayer.Settings(
-      volume = volume,
-      fadeIn = fadeIn,
-      fadeOut = fadeOut,
-      playbackRate = playbackRate,
-      reversed = reverse,
-      loop = if (loop) Some(Loop(start = 1, end = 2)) else None,
-      startTime = startTime, offset = offset, duration = Some(duration)
-    )
-
-  div(
-    GlobalStyles.header,
-
-    h1("SOS Sampler"),
-
-    div(
-      GlobalStyles.controls,
-      input(typ := "range", minAttr := "0", maxAttr := "1.0", stepAttr := "0.1", defaultValue := "0.8", GlobalStyles.slider, value <-- volumeSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> volumeSlider),
-      label("Volume", GlobalStyles.labels),
-      input(typ := "range", minAttr := "0", maxAttr := "3", stepAttr := "0.1", defaultValue := "0", GlobalStyles.slider, value <-- fadeInSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> fadeInSlider),
-      label("Fade In", GlobalStyles.labels),
-      input(typ := "range",minAttr := "0", maxAttr := "3", stepAttr := "0.1", defaultValue := "0", GlobalStyles.slider, value <-- fadeOutSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> fadeOutSlider),
-      label("Fade Out", GlobalStyles.labels),
-      input(typ := "range", minAttr := "0", maxAttr := "3", stepAttr := "0.1", defaultValue := "0", GlobalStyles.slider, value <-- playbackRateSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> playbackRateSlider),
-      label("Playback Rate", GlobalStyles.labels),
-      input(typ := "range", minAttr := "0", maxAttr := "3", stepAttr := "0.1", defaultValue := "0", GlobalStyles.slider, value <-- startTimeSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> startTimeSlider),
-      label("Start Time", GlobalStyles.labels),
-      input(typ := "range", minAttr := "0", maxAttr := "3", stepAttr := "0.1", defaultValue := "0", GlobalStyles.slider, value <-- offsetSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> offsetSlider),
-      label("Offset", GlobalStyles.labels),
-      input(typ := "range", minAttr := "0", maxAttr := "8", stepAttr := "0.1", defaultValue := "5", GlobalStyles.slider, value <-- durationSlider.signal.map(_.toString), onInput.mapToValue.map(_.toDouble) --> durationSlider),
-      label("Duration", GlobalStyles.labels),
-      input(typ := "checkbox", GlobalStyles.checkbox, checked <-- loopCheckbox.signal, onInput.mapToChecked --> loopCheckbox),
-      label("Loop", GlobalStyles.labels),
-      input(typ := "checkbox", GlobalStyles.checkbox, checked <-- reverseCheckbox.signal, onInput.mapToChecked --> reverseCheckbox),
-      label("Reverse", GlobalStyles.labels),
-      button("Waveform", onClick --> attemptWaveView()),
-      canvasTag(idAttr := "canvas", GlobalStyles.canvas)),
-
-
-
-    div(
-      cls := "keyboard-container",
-      GlobalStyles.keyboardContainer,
-      child <-- customSettings.map(settings => createKeyboard(Some(settings)))
-    )
+    keyToNote.get(key).foreach:
+      keyId =>
+        val keyElement = dom.document.getElementById(keyId)
+        if (keyElement != null) then
+          keyElement.asInstanceOf[dom.html.Element].click()
+          keyElement.asInstanceOf[dom.html.Element].style.transition = "transform 0.2s"
+          keyElement.asInstanceOf[dom.html.Element].style.transform = "perspective(330px) rotateX(-2deg)"
+          keyElement.asInstanceOf[dom.html.Element].style.transformOrigin = "top"
   )
 
+  dom.document.addEventListener("keyup", (e: KeyboardEvent) =>
+    val key = e.key
+    keyToNote.get(key).foreach:
+      keyId =>
+        val keyElement = dom.document.getElementById(keyId)
+        if (keyElement != null) then
+          keyElement.asInstanceOf[dom.html.Element].style.transform = ""
+  )
+
+  div(cls := "sampler-container",
+    div(cls := "sampler-section",
+      div(cls := "waveform-loader",
+        div(cls := "text-container",
+          p("Instruments:"),
+          instrumentElements,
+        ),
+        canvasTag(idAttr := "canvas")),
+    ),
+    div(cls := "sampler-section",
+      div(cls := "sliders",
+        createSliderElement("VOL", volumeSlider, 0.0, 1.0, 0.5, 0.1),
+        createSliderElement("FADE IN", fadeInSlider, 0.0, 3.0, 0.0, 0.1),
+        createSliderElement("FADE OUT", fadeOutSlider, 0.0, 3.0, 0.0, 0.1),
+        createSliderElement("PLAYBACK RATE", playbackRateSlider, 0.1, 2.0, 1.0, 0.1),
+        createSliderElement("START DELAY", startTimeSlider, 0.0, 3.0, 0.0, 0.1),
+        createSliderElement("OFFSET", offsetSlider, 1.0, 5.0, 0.0, 0.1),
+        createSliderElement("LENGTH", lengthSlider, 0.5, 10, 5.0, 1.0),
+      ),
+      div(cls := "playback-controls",
+        createCheckboxElement("LOOP", loopCheckbox),
+        createCheckboxElement("REVERSE", reverseCheckbox)),
+
+      div(cls := "playback-controls"),
+      // TO DO: Add play and stop buttons
+    ),
+    div(cls := "keyboard-container sampler-section",
+      child <-- selectedSampler.signal.flatMap:
+        case Some(sampler) =>
+          customSettings.map(settings => createKeyboard(sampler, Some(settings), octaves))
+        case None =>
+          Val(div(cls := "select-text", "Please select an instrument to start."))
+    )
+  )
