@@ -21,4 +21,4 @@ The commands in `.github/workflows/ci.yml` will automatically build and publish 
 
 Note that your main branch must be called `main` (the current default), not `master` (which older repositories might use.) See [renaming a branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/renaming-a-branch)
 
-Then visit <username>.github.io/sos-sampler to see the deployed site.
+Then visit `username.github.io/sos-sampler` to see the deployed site.
